@@ -11,7 +11,7 @@ import blendertoolbox as bt
 # Basic Configuration
 PCD_PATH = "data/volume.ply"         # Point cloud file path
 SAMPLE_RATE = 10                     # Point cloud sampling rate (higher value means fewer ellipsoids)
-ELLIPSE_SCALE = (0.05, 0.05, 0.05)   # Base scaling ratio
+ELLIPSE_SCALE = (0.02, 0.02, 0.02)   # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
 
 # Optimization Mode Selection
@@ -100,9 +100,9 @@ def create_merged_ellipsoids(points, colors):
                                 desc="Merging"):
         # Random scaling
         scale = (
-            random.uniform(0.8, 1.2) * ELLIPSE_SCALE[0],
-            random.uniform(0.8, 1.2) * ELLIPSE_SCALE[1],
-            random.uniform(0.8, 1.2) * ELLIPSE_SCALE[2]
+            random.uniform(1, 10) * ELLIPSE_SCALE[0],
+            random.uniform(1, 10) * ELLIPSE_SCALE[1],
+            random.uniform(1, 10) * ELLIPSE_SCALE[2]
         )
 
         # Transform vertices
