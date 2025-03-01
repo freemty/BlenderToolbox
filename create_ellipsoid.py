@@ -11,7 +11,6 @@ import blendertoolbox as bt
 
 
 PCD_PATH = "data/volume.ply"
-OUTPUT_PATH = os.path.join(os.getcwd(), 'ellipsoid.png')
 
 IMG_RES_X = 1024
 IMG_RES_Y = 1024
@@ -143,9 +142,9 @@ if __name__ == "__main__":
     bt.shadowThreshold(alphaThreshold=0.05, interpolationMode='CARDINAL')
 
     # Save project file
-    save_path = os.getcwd() + '/test.blend'
+    save_path = os.getcwd() + '/ellipsoid.blend'
     bpy.ops.wm.save_as_mainfile(filepath=save_path)
     print(f"Ellipsoid created and saved to: {save_path}")
 
     # Save rendering
-    bt.renderImage(OUTPUT_PATH, cam)
+    bt.renderImage(os.getcwd() + '/ellipsoid.png', cam)
