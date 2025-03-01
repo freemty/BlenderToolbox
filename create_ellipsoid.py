@@ -91,13 +91,15 @@ if __name__ == "__main__":
     blue = pcd['vertex']['blue']
     PC = np.array([red, green, blue], dtype=np.float32).T / 255.0
     PC = np.concatenate((PC, np.ones((PC.shape[0], 1))), axis=1)
+    P = P[::200]
+    PC = PC[::200]
     LOCATION = (0.7, -0.02, 0.75)
     ROTATION = tuple((np.array([78, 182, 268]) * 1.0 / 180.0 * np.pi).tolist())
     SCALE = (0.05, 0.05, 0.05)
 
     # clean_scene()
 
-    for i in tqdm(range(50)): # pylint: disable=C0200
+    for i in tqdm(range(len(P))): # pylint: disable=C0200
         # Ellipsoid parameters
         ellipsoid_params = {
             "name": "MyEllipsoid",
