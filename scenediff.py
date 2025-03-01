@@ -20,7 +20,7 @@ imgRes_y = 1024
 numSamples = 100 
 exposure = 1.5 
 bt.blenderInit(imgRes_x, imgRes_y, numSamples, exposure)
-pcd_path = "/Users/lane/workspace/2025_ICCV_scenediff/pipeline_example/pcd/volume.ply"
+pcd_path = "data/volume.ply"
 ## read mesh 
 location = (0.7,-0.02,0.75)
 rotation = (78,182,268) 
@@ -38,7 +38,7 @@ ptColor = bt.colorObj([], 0.5, 1.0, 1.0, 0.0, 0.0)
 P = P[::3]
 PC = PC[::3]
 
-num_groups = len(P)
+num_groups = 20
 group_indices = np.random.choice(num_groups, size=len(P))
 # split the point cloud into len(PC) parts
 mesh_list = []

@@ -17,3 +17,5 @@ myShapes/
 upload_to_pypi.sh
 build/*
 blendertoolbox.egg-info/*
+
+data/*
