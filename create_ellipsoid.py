@@ -64,7 +64,7 @@ def create_ellipsoid(name="Ellipsoid",
 
     # Set auto smooth
     mesh = obj.data
-    mesh.use_auto_smooth = True
+    mesh.use_auto_smooth = False
     mesh.auto_smooth_angle = 1.0472  # 60 degrees
 
     # Add subdivision surface modifier
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     # clean_scene()
 
-    for i in tqdm(range(len(P))): # pylint: disable=C0200
+    for i in tqdm(range(50)): # pylint: disable=C0200
         # Ellipsoid parameters
         ellipsoid_params = {
             "name": "MyEllipsoid",
@@ -116,12 +116,24 @@ if __name__ == "__main__":
         ellipsoid.rotation_euler = Vector(ROTATION)
         ellipsoid.scale = SCALE
 
-        # Set material (optional)
-        mat = bpy.data.materials.new(name="EllipsoidMat")
+        mat = bpy.data.materials.new(name=f"PointMat_{i}")
         mat.use_nodes = True
-        bsdf = mat.node_tree.nodes["Principled BSDF"]
-        bsdf.inputs["Base Color"].default_value = PC[i]
-        bsdf.inputs["Roughness"].default_value = 0.4
+        nodes = mat.node_tree.nodes
+        links = mat.node_tree.links
+
+        for node in nodes:
+            nodes.remove(node)
+        bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+        bsdf.inputs['Base Color'].default_value = PC[i]
+        bsdf.inputs['Metallic'].default_value = 0.0
+        bsdf.inputs['Roughness'].default_value = 1.0
+
+        output = nodes.new('ShaderNodeOutputMaterial')
+        links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
+
+        mat.blend_method = 'OPAQUE'
+        mat.shadow_method = 'OPAQUE'
+
         ellipsoid.data.materials.append(mat)
 
     # bt.invisibleGround(shadowBrightness=0.9)
