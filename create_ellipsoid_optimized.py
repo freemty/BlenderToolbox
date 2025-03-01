@@ -129,7 +129,7 @@ def create_merged_ellipsoids(points, colors):
     # Add vertex colors
     if USE_VERTEX_COLOR:
         color_layer = merged_mesh.vertex_colors.new()
-        for loop in merged_mesh.loops:
+        for loop in tqdm(merged_mesh.loops, desc="Adding vertex colors"):
             color_layer.data[loop.index].color = np.concatenate([color_data[loop.vertex_index], [1.0]])
 
         # Configure material
