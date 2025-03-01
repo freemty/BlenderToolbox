@@ -1,31 +1,95 @@
-## README的意义
+# **NEW!!** Installation with pip
+To use this toolbox, please make sure to install [Blender](https://www.blender.org) (version 4.0.0) and then install the toolbox with the following commands
+```
+conda create -n blender python=3.10
+source activate blender
+pip install blendertoolbox
+pip install bpy
+```
+Please make sure you're using python 3.10, as Blender Python `bpy` is only compiled for that version of python.
 
-README 文件通常是项目的第一个入口点。你应该通过 README 明确地告诉大家，为什么他们应该使用你的项目，以及安装和使用的方法。
+Once it is installed successfully, one can simply type in, e.g.,
+```
+python template.py
+```
+to render the mesh.
 
-如果在仅仅看文档而不看代码的情况下就可以使用你的项目，该文档就完成了。 这个非常重要，因为这将使项目的文档接口与其内部实现分开，只要接口保持不变，就可以自由更改项目的内部结构。 
+If for some reasons, `pip` has difficulty installing the packages. One can still fall back to the old way: downloading the toolbox and import the module `blendertoolbox` manually. This will require some changes to the demo scripts. After the modifications, you would need to call the script with blender background mode as
+```
+blender -b -P template.py
+```
 
-**文档，而不是代码定义了项目的使用方式。**
+(We especially want to thank [Otman Benchekroun](https://otman.ca/) for making the pip integration possible!)
+<!-- 
+# Blender Toolbox
 
-一个规范的README文档能减少用户检索信息的时间。
+This is a set of Python scripts for rendering 3D shapes in [Blender](https://www.blender.org). These scripts are just from my personal codebase for rendering paper-worthy figures. To use them, make sure you have installed Blender and you can run the demo by typing 
+```
+blender --background --python template.py
+```
+You may need to create an alias if you cannot run `blender` from the terminal.  
 
-## 标准 README
+This toolbox contains a set of standalone demos in `./demos/` to demonstrate different rendering effects. You can browse the results of the demos in `./demos/*.png`. You can also find some documented template demos in the main folder `./`:
+- The `template.py` is a customizable template script for users to plug-and-play different materials and parameters from the examples in `./demos`.
+- The `template_pointCloud.py` is a demo for rendering point clouds as tiny spheres. 
+- The `template_lazy.py` is the minimum version for you to render a mesh with the default camera, lighting, material. If you just want a quick rendering pipeline to visualize your triangle meshes, you can follow the lazy pipeline section below to see how easy it is to use `template_lazy.py`. -->
 
-一个标准的README文件应当至少包含以下的内容：
+## Lazy Pipeline
 
-- 项目背景：说明创建本项目的背景与动机，创建本项目试图解决的问题 
-- 安装方法：说明如何快速上手使用该项目
-- 使用方法：列出本项目能够提供的功能以及使用这些功能的方法
-- 文档：现阶段antcode鼓励用户使用语雀组织项目文档，在README上应当放入项目的语雀文档链接
+This is the step-by-step tutorial on how to use the `default_mesh.py` to render a mesh in few minutes.
 
-## 附加内容
+First, in `default_mesh.py`, you can set `mesh_path` to the desired mesh path you would like to render
+```
+"mesh_path": "path/to/your/mesh.obj"
+```
+Now go to your terminal, and then run the script using
+```
+python default_mesh.py
+```
+This will execute the script and you will see the progress of rendering like
+```
+...
+Fra:1 Mem:57.95M (0.00M, Peak 58.09M) | Time:00:02.00 | Remaining:00:08.06 | Mem:23.22M, Peak:23.22M | Scene, View Layer | Rendered 1/64 Tiles, Denoised 0 tiles
+Fra:1 Mem:58.45M (0.00M, Peak 58.65M) | Time:00:02.69 | Remaining:00:09.32 | Mem:23.72M, Peak:23.72M | Scene, View Layer | Rendered 2/64 Tiles, Denoised 0 tiles
+...
+```
+Once you see those messages, you can manually terminate the program (e.g., `Ctrl + C` on Mac). The purpose of running this is to create a `test.blend` file so that we can adjust the mesh position in the Blender UI. 
+So now open the newly created `test.blend` file using Blender software. You should land on the default scene like this
+![step1](./assets/step1.png)
+The next step is to click this "camera bottom" (yellow arrow) to view the scene from the eye of the camera
+![step2](./assets/step2.png)
+The next step is to click the mesh in the scene and drag the tiny arrow towards the left
+![step3](./assets/step3.png)
+You should see a new window that displays the mesh information (position, rotation, scale). The final step is to adjust all these parameters to your liking
+![step4](./assets/step4.png)
+Then you can copy those adjusted parameters from the Blender UI back to `mesh_position`, `mesh_rotation`, `mesh_scale` in the script respectively. The above steps are all you need in order to render a mesh, you can now re-run the script in the terminal
+```
+python default_mesh.py
+```
+This will output a `.png` file as your final rendering result. 
 
-视项目的实际情况，同样也应该包含以下内容：
+We also expose other commonly adjusted parameters, such as lighting angle, mesh color, image resolution, etc. For more details, please read the comments in the `default_mesh.py`.
 
-- 项目特性：说明本项目相较于其他同类项目所具有的特性
-- 兼容环境：说明本项目能够在什么平台上运行
-- 使用示例：展示一些使用本项目的小demo
-- 主要项目负责人：使用“@”标注出本项目的主要负责人，方便项目的用户沟通
-- 参与贡献的方式：规定好其他用户参与本项目并贡献代码的方式
-- 项目的参与者：列出项目主要的参与人
-- 已知用户：列出已经在生产环境中使用了本项目的全部或部分组件的公司或组织
-- 赞助者：列出为本项目提供赞助的用户
+The sample rendering pipeline works for all the demo files in the repository. Other "non-lazy" demos expose more parameters for users to tune. However, in order to know how to adjust those parameters require some background knowledge in Blender. I refer users to a quick introduction to Blender UI from Silvia's [website](https://www.silviasellan.com/blender_figure.html). There are also a ton of online tutorials which off er more advanced stuff way beyond what I have covered here.
+<!-- 
+## Notes
+
+Before rendering a scene, you probably need to set up the default rendering devices in the user preferences (e.g., which GPU to use). You only need to set up the user preferences once, then the script should be able to detect the GPUs automatically in the future. To set up the rendering devices, open the blender, go to `Edit` > `Preferences` > `System`, then in the `Cycles Render Devices` select your preferred devices for rendering (e.g., select `CUDA` and check every GPUs on your computer). After setting up the devices, click the `Save Preference` on bottom left.
+![setDevice](./assets/setDevice.png)
+
+For a more detailed tutorial on Blender rendering with/without scripting, please refer to [link](https://www.silviasellan.com/blender_course_scripting.html) by Silvia Sellán. -->
+
+## Contact
+
+These scripts are tested on Blender 4.0.0. As the API may change, using a different version of the Blender may cause some functions not working properly. If you notice some bugs due to Blender updates or any questions/recommendations, please contact hsuehtil@gmail.com.
+
+## BibTeX
+```
+@software{Liu_BlenderToolbox_2018,
+  author = {Liu, Hsueh-Ti Derek},
+  month = {12},
+  title = {{Blender Toolbox}},
+  url = {https://github.com/HTDerekLiu/BlenderToolbox},
+  year = {2018}
+}
+```
