@@ -10,7 +10,7 @@ import blendertoolbox as bt
 
 # Basic Configuration
 PCD_PATH = "data/volume.ply"         # Point cloud file path
-SAMPLE_RATE = 10                     # Point cloud sampling rate (higher value means fewer ellipsoids)
+SAMPLE_RATE = 10                      # Point cloud sampling rate (higher value means fewer ellipsoids)
 ELLIPSE_SCALE = (0.02, 0.02, 0.02)   # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
 
@@ -129,8 +129,12 @@ def create_merged_ellipsoids(points, colors):
     # Add vertex colors
     if USE_VERTEX_COLOR:
         color_layer = merged_mesh.vertex_colors.new()
-        for loop in tqdm(merged_mesh.loops, desc="Adding vertex colors"):
-            color_layer.data[loop.index].color = np.concatenate([color_data[loop.vertex_index], [1.0]])
+        color_data_np = np.array(color_data, dtype=np.float32)
+        alpha = np.ones((color_data_np.shape[0], 1), dtype=np.float32)
+        color_with_alpha = np.hstack([color_data_np, alpha])
+        vertex_indices = np.array([loop.vertex_index for loop in merged_mesh.loops], dtype=np.int32)
+        loop_colors = color_with_alpha[vertex_indices].flatten()
+        color_layer.data.foreach_set("color", loop_colors)
 
         # Configure material
         mat = bpy.data.materials.new(name="VertexColorMat")

@@ -40,7 +40,7 @@ pt_color = bt.colorObj([], 0.5, 1.0, 1.0, 0.0, 0.0)
 P = P[::3]
 PC = PC[::3]
 
-NUM_GROUPS = 20
+NUM_GROUPS = 1
 group_indices = np.random.choice(NUM_GROUPS, size=len(P))
 # Split the point cloud into parts
 mesh_list = []
