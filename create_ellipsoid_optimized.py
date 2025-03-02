@@ -95,7 +95,7 @@ def create_merged_ellipsoids(points, colors):
         merged_obj.data.materials.append(material)
 
     # Batch process each ellipsoid
-    for idx, (pos, color) in tqdm(enumerate(zip(points, colors)), 
+    for idx, (pos, color) in tqdm(enumerate(zip(points, colors)),
                                 total=len(points),
                                 desc="Merging"):
         # Random scaling
