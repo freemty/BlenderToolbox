@@ -45,7 +45,7 @@ group_indices = np.random.choice(NUM_GROUPS, size=len(P))
 # Split the point cloud into parts
 mesh_list = []
 for i in tqdm(range(NUM_GROUPS)):
-    mask = (group_indices == i)
+    mask = group_indices == i
     group_points = P[mask]
     group_colors = PC[mask]
     mesh_list.append(bt.readNumpyPoints(group_points, LOCATION, ROTATION, SCALE))
