@@ -11,7 +11,7 @@ import blendertoolbox as bt
 # Basic Configuration
 PCD_PATH = "data/volume.ply"         # Point cloud file path
 SAMPLE_RATE = 10                      # Point cloud sampling rate (higher value means fewer ellipsoids)
-ELLIPSE_SCALE = (0.02, 0.02, 0.02)   # Base scaling ratio
+ELLIPSE_SCALE = (0.03, 0.03, 0.03)   # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
 
 # Optimization Mode Selection
@@ -137,21 +137,39 @@ def create_merged_ellipsoids(points, colors):
         color_layer.data.foreach_set("color", loop_colors)
 
         # Configure material
-        mat = bpy.data.materials.new(name="VertexColorMat")
+        mat = bpy.data.materials.new(name="MeshMaterial")
+        merged_obj.data.materials.append(mat)
+        merged_obj.active_material = mat
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
-        nodes.clear()
+        tree = mat.node_tree
+        # nodes.clear()
 
-        bsdf = nodes.new('ShaderNodeBsdfPrincipled')
-        bsdf.inputs['Roughness'].default_value = 1.0
+        tree.nodes.new('ShaderNodeAttribute')
+        tree.nodes[-1].attribute_name = "Col"
+        HSVNode = tree.nodes.new('ShaderNodeHueSaturation')
+        tree.links.new(tree.nodes["Attribute"].outputs['Color'], HSVNode.inputs['Color'])
+        HSVNode.inputs['Hue'].default_value = 0.5
+        HSVNode.inputs['Saturation'].default_value = 1.0
+        HSVNode.inputs['Value'].default_value = 1.0
+        HSVNode.location.x -= 200
 
-        attr = nodes.new('ShaderNodeAttribute')
-        attr.attribute_name = "Col"
+        # set color brightness/contrast
+        BCNode = tree.nodes.new('ShaderNodeBrightContrast')
+        BCNode.inputs['Bright'].default_value = 0.0
+        BCNode.inputs['Contrast'].default_value = 0.0
+        BCNode.location.x -= 400
 
-        output = nodes.new('ShaderNodeOutputMaterial')
-        mat.node_tree.links.new(attr.outputs['Color'], bsdf.inputs['Base Color'])
-        mat.node_tree.links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
-        merged_obj.data.materials.append(mat)
+        # set principled BSDF
+        tree.nodes["Principled BSDF"].inputs['Roughness'].default_value = 1.0
+        tree.nodes["Principled BSDF"].inputs['Sheen Tint'].default_value = [0, 0, 0, 1]
+        tree.links.new(HSVNode.outputs['Color'], BCNode.inputs['Color'])
+        tree.links.new(BCNode.outputs['Color'], tree.nodes['Principled BSDF'].inputs['Base Color'])
+
+        # output = nodes.new('ShaderNodeOutputMaterial')
+        # mat.node_tree.links.new(attr.outputs['Color'], bsdf.inputs['Base Color'])
+        # mat.node_tree.links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
+        # merged_obj.data.materials.append(mat)
 
     return merged_obj
 
@@ -180,6 +198,7 @@ if __name__ == "__main__":
         merged_obj.rotation_euler = tuple((np.array([78, 182, 268]) * 1.0 / 180.0 * np.pi).tolist())
         merged_obj.scale = (0.05, 0.05, 0.05)
 
+    bt.invisibleGround(shadowBrightness=0.9)
     # setup scene
     cam = bt.setCamera(CAM_LOCATION, LOOK_AT_LOCATION, FOCAL_LENGTH)
     sun = bt.setLight_sun(LIGHT_ANGLE, STRENGTH, SHADOW_SOFTNESS)

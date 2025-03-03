@@ -22,6 +22,7 @@ NUM_SAMPLES = 100
 EXPOSURE = 1.5
 bt.blenderInit(IMG_RES_X, IMG_RES_Y, NUM_SAMPLES, EXPOSURE)
 PCD_PATH = "data/volume.ply"
+SAMPLE_RATE = 2
 
 # Read mesh
 LOCATION = (0.7, -0.02, 0.75)
@@ -37,8 +38,8 @@ green = pcd['vertex']['green']
 blue = pcd['vertex']['blue']
 PC = np.array([red, green, blue], dtype=np.float32).T / 255.0
 pt_color = bt.colorObj([], 0.5, 1.0, 1.0, 0.0, 0.0)
-P = P[::3]
-PC = PC[::3]
+P = P[::SAMPLE_RATE]
+PC = PC[::SAMPLE_RATE]
 
 NUM_GROUPS = 1
 group_indices = np.random.choice(NUM_GROUPS, size=len(P))
