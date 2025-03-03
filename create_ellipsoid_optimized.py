@@ -3,7 +3,7 @@ import random
 import plyfile
 import numpy as np
 import bpy # pylint: disable=import-error
-from mathutils import Vector,Quaternion # pylint: disable=import-error
+from mathutils import Vector, Quaternion # pylint: disable=E0611
 from tqdm import tqdm
 
 import blendertoolbox as bt
@@ -11,7 +11,7 @@ import blendertoolbox as bt
 # Basic Configuration
 PCD_PATH = "data/sample_660.ply"     # Point cloud file path
 SAMPLE_RATE = 1                      # Point cloud sampling rate (higher value means fewer ellipsoids)
-ELLIPSE_SCALE = 0.03                  # Base scaling ratio
+ELLIPSE_SCALE = 0.4                  # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
 
 # Optimization Mode Selection
@@ -116,37 +116,15 @@ def create_merged_ellipsoids(points, colors, scales, rotations):
             rotation[3],  # w
             rotation[0],  # x
             rotation[1],  # y
-            rotation[2]   # z
+            rotation[2],  # z
         ))
         rotation_matrix = quat.to_matrix()
 
         # Transform vertices
         vert_offset = len(all_verts)
-        # transformed_verts = [
-        #     (
-        #         pos[0] + v.x * scale[0],
-        #         pos[1] + v.y * scale[1],
-        #         pos[2] + v.z * scale[2]
-        #     ) for v in base_verts
-        # ]
         transformed_verts = [
-            (
-                pos[0] + (rotation_matrix @ Vector((
-                    v.x * scale[0],
-                    v.y * scale[1],
-                    v.z * scale[2]
-                ))).x,
-                pos[1] + (rotation_matrix @ Vector((
-                    v.x * scale[0],
-                    v.y * scale[1],
-                    v.z * scale[2]
-                ))).y,
-                pos[2] + (rotation_matrix @ Vector((
-                    v.x * scale[0],
-                    v.y * scale[1],
-                    v.z * scale[2]
-                ))).z
-            ) for v in base_verts
+            tuple((pos + rotation_matrix @ Vector((v.x * scale[0], v.y * scale[1], v.z * scale[2]))).tolist())
+            for v in base_verts
         ]
         all_verts.extend(transformed_verts)
 
@@ -164,10 +142,8 @@ def create_merged_ellipsoids(points, colors, scales, rotations):
     if USE_VERTEX_COLOR:
         color_layer = merged_mesh.vertex_colors.new()
         color_data_np = np.array(color_data, dtype=np.float32)
-        alpha = np.ones((color_data_np.shape[0], 1), dtype=np.float32)
-        color_with_alpha = np.hstack([color_data_np, alpha])
         vertex_indices = np.array([loop.vertex_index for loop in merged_mesh.loops], dtype=np.int32)
-        loop_colors = color_with_alpha[vertex_indices].flatten()
+        loop_colors = color_data_np[vertex_indices].flatten()
         color_layer.data.foreach_set("color", loop_colors)
 
         # Configure material
@@ -216,10 +192,12 @@ if __name__ == "__main__":
     vertices = ply['vertex']
     points = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
     sh = np.vstack([vertices['f_dc_0'], vertices['f_dc_1'], vertices['f_dc_2']]).T
-    colors = sh2rgb(sh).clip(0, 1)
+    colors = sh2rgb(sh)
+    alphas = np.vstack([vertices['opacity']]).T
+    colors = np.hstack([colors, alphas])
     scales = np.exp(np.vstack([vertices['scale_0'], vertices['scale_1'], vertices['scale_2']]).T)
     rots = np.vstack([vertices['rot_0'], vertices['rot_1'], vertices['rot_2'], vertices['rot_3']]).T
-
+    rots = rots / np.linalg.norm(rots, axis=1, keepdims=True)
 
     # Data sampling
     points = points[::SAMPLE_RATE]
