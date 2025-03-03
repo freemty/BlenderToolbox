@@ -22,7 +22,7 @@ NUM_SAMPLES = 100
 EXPOSURE = 1.5
 bt.blenderInit(IMG_RES_X, IMG_RES_Y, NUM_SAMPLES, EXPOSURE)
 PCD_PATH = "data/volume.ply"
-SAMPLE_RATE = 2
+SAMPLE_RATE = 3
 
 # Read mesh
 LOCATION = (0.7, -0.02, 0.75)
@@ -56,7 +56,7 @@ for i in tqdm(range(NUM_GROUPS)):
     bt.setMat_pointCloudColored(mesh_list[i], pt_color, point_size)
 
 # Set invisible plane (shadow catcher)
-bt.invisibleGround(shadowBrightness=0.9)
+bt.invisibleGround(location=(0,0,0.5), shadowBrightness=0.9)
 
 # Set camera (recommend to change mesh instead of camera, unless you want to adjust the Elevation)
 CAM_LOCATION = (3, 0, 2)

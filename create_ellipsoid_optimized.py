@@ -3,15 +3,15 @@ import random
 import plyfile
 import numpy as np
 import bpy # pylint: disable=import-error
-from mathutils import Vector # pylint: disable=import-error
+from mathutils import Vector,Quaternion # pylint: disable=import-error
 from tqdm import tqdm
 
 import blendertoolbox as bt
 
 # Basic Configuration
-PCD_PATH = "data/volume.ply"         # Point cloud file path
-SAMPLE_RATE = 10                      # Point cloud sampling rate (higher value means fewer ellipsoids)
-ELLIPSE_SCALE = (0.03, 0.03, 0.03)   # Base scaling ratio
+PCD_PATH = "data/sample_660.ply"     # Point cloud file path
+SAMPLE_RATE = 1                      # Point cloud sampling rate (higher value means fewer ellipsoids)
+ELLIPSE_SCALE = 0.03                  # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
 
 # Optimization Mode Selection
@@ -31,6 +31,13 @@ FOCAL_LENGTH = 45  # (UI: click camera > Object Data > Focal Length)
 LIGHT_ANGLE = (6, -30, -155)
 STRENGTH = 2
 SHADOW_SOFTNESS = 0.3
+
+C0 = 0.28209479177387814
+
+
+def sh2rgb(sh):
+    return sh * C0 + 0.5
+
 
 def clean_scene():
     """Clean the scene"""
@@ -67,7 +74,7 @@ def create_base_sphere():
     return base_sphere.data
 
 
-def create_merged_ellipsoids(points, colors):
+def create_merged_ellipsoids(points, colors, scales, rotations):
     """Batch merge ellipsoids into a single mesh"""
     # Get base sphere data
     base_mesh = create_base_sphere()
@@ -100,18 +107,45 @@ def create_merged_ellipsoids(points, colors):
                                 desc="Merging"):
         # Random scaling
         scale = (
-            random.uniform(1, 10) * ELLIPSE_SCALE[0],
-            random.uniform(1, 10) * ELLIPSE_SCALE[1],
-            random.uniform(1, 10) * ELLIPSE_SCALE[2]
+            scales[idx][0] * ELLIPSE_SCALE,
+            scales[idx][1] * ELLIPSE_SCALE,
+            scales[idx][2] * ELLIPSE_SCALE
         )
+        rotation = rotations[idx]
+        quat = Quaternion((
+            rotation[3],  # w
+            rotation[0],  # x
+            rotation[1],  # y
+            rotation[2]   # z
+        ))
+        rotation_matrix = quat.to_matrix()
 
         # Transform vertices
         vert_offset = len(all_verts)
+        # transformed_verts = [
+        #     (
+        #         pos[0] + v.x * scale[0],
+        #         pos[1] + v.y * scale[1],
+        #         pos[2] + v.z * scale[2]
+        #     ) for v in base_verts
+        # ]
         transformed_verts = [
             (
-                pos[0] + v.x * scale[0],
-                pos[1] + v.y * scale[1],
-                pos[2] + v.z * scale[2]
+                pos[0] + (rotation_matrix @ Vector((
+                    v.x * scale[0],
+                    v.y * scale[1],
+                    v.z * scale[2]
+                ))).x,
+                pos[1] + (rotation_matrix @ Vector((
+                    v.x * scale[0],
+                    v.y * scale[1],
+                    v.z * scale[2]
+                ))).y,
+                pos[2] + (rotation_matrix @ Vector((
+                    v.x * scale[0],
+                    v.y * scale[1],
+                    v.z * scale[2]
+                ))).z
             ) for v in base_verts
         ]
         all_verts.extend(transformed_verts)
@@ -181,11 +215,17 @@ if __name__ == "__main__":
     ply = plyfile.PlyData.read(PCD_PATH)
     vertices = ply['vertex']
     points = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
-    colors = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T / 255.0
+    sh = np.vstack([vertices['f_dc_0'], vertices['f_dc_1'], vertices['f_dc_2']]).T
+    colors = sh2rgb(sh).clip(0, 1)
+    scales = np.exp(np.vstack([vertices['scale_0'], vertices['scale_1'], vertices['scale_2']]).T)
+    rots = np.vstack([vertices['rot_0'], vertices['rot_1'], vertices['rot_2'], vertices['rot_3']]).T
+
 
     # Data sampling
     points = points[::SAMPLE_RATE]
     colors = colors[::SAMPLE_RATE]
+    scales = scales[::SAMPLE_RATE]
+    rots = rots[::SAMPLE_RATE]
 
     # Automatically select optimization mode based on data volume
     if USE_GEOMETRY_NODES and len(points) > MERGE_THRESHOLD:
@@ -193,12 +233,12 @@ if __name__ == "__main__":
         raise NotImplementedError("Geometry nodes mode requires manual configuration in Blender interface")
     else:
         # Merged mesh mode
-        merged_obj = create_merged_ellipsoids(points, colors)
+        merged_obj = create_merged_ellipsoids(points, colors, scales, rots)
         merged_obj.location = (0.7, -0.02, 0.75)
         merged_obj.rotation_euler = tuple((np.array([78, 182, 268]) * 1.0 / 180.0 * np.pi).tolist())
         merged_obj.scale = (0.05, 0.05, 0.05)
 
-    bt.invisibleGround(shadowBrightness=0.9)
+    bt.invisibleGround(location=(0,0,0.5),shadowBrightness=0.9)
     # setup scene
     cam = bt.setCamera(CAM_LOCATION, LOOK_AT_LOCATION, FOCAL_LENGTH)
     sun = bt.setLight_sun(LIGHT_ANGLE, STRENGTH, SHADOW_SOFTNESS)
