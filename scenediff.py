@@ -31,7 +31,7 @@ SCALE = (0.05, 0.05, 0.05)
 pcd = plyfile.PlyData.read(PCD_PATH)
 x = pcd['vertex']['x']
 y = pcd['vertex']['y']
-z = pcd['vertex']['z']
+z = pcd['vertex']['z'] + 16
 P = np.array([x, y, z], dtype=np.float32).T
 red = pcd['vertex']['red']
 green = pcd['vertex']['green']
@@ -51,12 +51,13 @@ for i in tqdm(range(NUM_GROUPS)):
     group_colors = PC[mask]
     mesh_list.append(bt.readNumpyPoints(group_points, LOCATION, ROTATION, SCALE))
     mesh_list[i] = bt.setPointColors(mesh_list[i], group_colors)
-    point_size = random.uniform(0.01, 0.2)
+    # point_size = random.uniform(0.01, 0.2)
+    point_size = 0.2
     # Set material pt_color = (vertex_RGBA, H, S, V, Bright, Contrast)
     bt.setMat_pointCloudColored(mesh_list[i], pt_color, point_size)
 
 # Set invisible plane (shadow catcher)
-bt.invisibleGround(location=(0,0,0.5), shadowBrightness=0.9)
+bt.invisibleGround(location=(0,0,0.2), shadowBrightness=0.9)
 
 # Set camera (recommend to change mesh instead of camera, unless you want to adjust the Elevation)
 CAM_LOCATION = (3, 0, 2)

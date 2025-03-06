@@ -9,9 +9,9 @@ from tqdm import tqdm
 import blendertoolbox as bt
 
 # Basic Configuration
-PCD_PATH = "data/sample_660.ply"     # Point cloud file path
-SAMPLE_RATE = 2                      # Point cloud sampling rate (higher value means fewer ellipsoids)
-ELLIPSE_SCALE = 0.4                  # Base scaling ratio
+PCD_PATH = "data/volume.ply"     # Point cloud file path
+SAMPLE_RATE = 3                      # Point cloud sampling rate (higher value means fewer ellipsoids)
+VOXEL_SCALE = 0.3                  # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
 
 # Optimization Mode Selection
@@ -52,6 +52,17 @@ def clean_scene():
     bpy.ops.outliner.orphans_purge()
 
 
+def create_base_voxel():
+    """Create base voxel template (low poly)"""
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0,0,0))
+    base_voxel = bpy.context.active_object
+    base_voxel.name = "BaseVoxelTemplate"
+    base_voxel.hide_render = True
+    base_voxel.hide_viewport = True
+
+    return base_voxel.data
+
+
 def create_base_sphere():
     """Create base sphere template (low poly)"""
     bpy.ops.mesh.primitive_uv_sphere_add(
@@ -74,16 +85,16 @@ def create_base_sphere():
     return base_sphere.data
 
 
-def create_merged_ellipsoids(points, colors, scales, rotations):
+def create_merged_voxels(points, colors):
     """Batch merge ellipsoids into a single mesh"""
     # Get base sphere data
-    base_mesh = create_base_sphere()
+    base_mesh = create_base_voxel()
     base_verts = [v.co for v in base_mesh.vertices]
     base_faces = [p.vertices[:] for p in base_mesh.polygons]
 
     # Create merge container
-    merged_mesh = bpy.data.meshes.new("MergedEllipsoids")
-    merged_obj = bpy.data.objects.new("MergedEllipsoids", merged_mesh)
+    merged_mesh = bpy.data.meshes.new("MergedVoxels")
+    merged_obj = bpy.data.objects.new("MergedVoxels", merged_mesh)
     bpy.context.collection.objects.link(merged_obj)
 
     all_verts = []
@@ -92,7 +103,7 @@ def create_merged_ellipsoids(points, colors, scales, rotations):
 
     # Material setup
     if not USE_VERTEX_COLOR:
-        material = bpy.data.materials.new(name="EllipsoidMaterial")
+        material = bpy.data.materials.new(name="VoxelMaterial")
         material.use_nodes = True
         nodes = material.node_tree.nodes
         nodes.clear()
@@ -107,23 +118,15 @@ def create_merged_ellipsoids(points, colors, scales, rotations):
                                 desc="Merging"):
         # Random scaling
         scale = (
-            scales[idx][0] * ELLIPSE_SCALE,
-            scales[idx][1] * ELLIPSE_SCALE,
-            scales[idx][2] * ELLIPSE_SCALE
+            VOXEL_SCALE,
+            VOXEL_SCALE,
+            VOXEL_SCALE
         )
-        rotation = rotations[idx]
-        quat = Quaternion((
-            rotation[3],  # w
-            rotation[0],  # x
-            rotation[1],  # y
-            rotation[2],  # z
-        ))
-        rotation_matrix = quat.to_matrix()
 
         # Transform vertices
         vert_offset = len(all_verts)
         transformed_verts = [
-            tuple((pos + rotation_matrix @ Vector((v.x * scale[0], v.y * scale[1], v.z * scale[2]))).tolist())
+            tuple((pos + Vector((v.x * scale[0], v.y * scale[1], v.z * scale[2]))).tolist())
             for v in base_verts
         ]
         all_verts.extend(transformed_verts)
@@ -191,19 +194,13 @@ if __name__ == "__main__":
     ply = plyfile.PlyData.read(PCD_PATH)
     vertices = ply['vertex']
     points = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
-    sh = np.vstack([vertices['f_dc_0'], vertices['f_dc_1'], vertices['f_dc_2']]).T
-    colors = sh2rgb(sh).clip(0, 1)
-    alphas = np.vstack([vertices['opacity']]).T
-    colors = np.hstack([colors, alphas])
-    scales = np.exp(np.vstack([vertices['scale_0'], vertices['scale_1'], vertices['scale_2']]).T)
-    rots = np.vstack([vertices['rot_0'], vertices['rot_1'], vertices['rot_2'], vertices['rot_3']]).T
-    rots = rots / np.linalg.norm(rots, axis=1, keepdims=True)
+    points[:, 2] += 16
+    colors = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T / 255.0
+    colors = np.hstack([colors, np.ones((colors.shape[0], 1))])
 
     # Data sampling
     points = points[::SAMPLE_RATE]
     colors = colors[::SAMPLE_RATE]
-    scales = scales[::SAMPLE_RATE]
-    rots = rots[::SAMPLE_RATE]
 
     # Automatically select optimization mode based on data volume
     if USE_GEOMETRY_NODES and len(points) > MERGE_THRESHOLD:
@@ -211,7 +208,7 @@ if __name__ == "__main__":
         raise NotImplementedError("Geometry nodes mode requires manual configuration in Blender interface")
     else:
         # Merged mesh mode
-        merged_obj = create_merged_ellipsoids(points, colors, scales, rots)
+        merged_obj = create_merged_voxels(points, colors)
         merged_obj.location = (0.7, -0.02, 0.75)
         merged_obj.rotation_euler = tuple((np.array([78, 182, 268]) * 1.0 / 180.0 * np.pi).tolist())
         merged_obj.scale = (0.05, 0.05, 0.05)
@@ -224,11 +221,11 @@ if __name__ == "__main__":
     bt.shadowThreshold(alphaThreshold=0.05, interpolationMode='CARDINAL')
 
     print("Saving scene blend...")
-    save_path = os.path.join(os.getcwd(), "optimized_ellipsoids.blend")
+    save_path = os.path.join(os.getcwd(), "voxels.blend")
     bpy.ops.wm.save_as_mainfile(filepath=save_path)
 
     print("Starting render...")
-    render_path = os.path.join(os.getcwd(), "render_result.png")
+    render_path = os.path.join(os.getcwd(), "render_voxels_result.png")
     bt.renderImage(render_path, cam)
 
     print(f"Scene saved to: {save_path}")
