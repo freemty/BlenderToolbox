@@ -11,8 +11,8 @@ import blendertoolbox as bt
 
 # Basic Configuration
 PCD_PATH = "data/volume.ply"     # Point cloud file path
-SAMPLE_RATE = 3                      # Point cloud sampling rate (higher value means fewer ellipsoids)
-VOXEL_SCALE = 0.3                  # Base scaling ratio
+SAMPLE_RATE = 13                      # Point cloud sampling rate (higher value means fewer ellipsoids)
+VOXEL_SCALE = 0.6                  # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
 
 # Optimization Mode Selection
@@ -197,11 +197,11 @@ if __name__ == "__main__":
     points = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
     points[:, 2] += 16
     colors = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T / 255.0
-    colors = np.hstack([colors, np.ones((colors.shape[0], 1))])
     colors = np.mean(colors, axis=1)
-    cmap = plt.get_cmap('Spectral')
+    cmap = plt.get_cmap('viridis')
     colors = cmap(colors)
-    colors = colors[:, :3]
+    colors = colors[:, :4]
+    # colors = np.hstack([colors, np.ones((colors.shape[0], 1))])
 
     # Data sampling
     points = points[::SAMPLE_RATE]
