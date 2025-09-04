@@ -9,7 +9,8 @@ from tqdm import tqdm
 import blendertoolbox as bt
 
 # Basic Configuration
-PCD_PATH = "data/sample_660.ply"     # Point cloud file path
+# PCD_PATH = "data/sample_660.ply"     # Point cloud file path
+PCD_PATH = "data/3dgs.ply"     # Point cloud file path
 SAMPLE_RATE = 2                      # Point cloud sampling rate (higher value means fewer ellipsoids)
 ELLIPSE_SCALE = 0.4                  # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
@@ -223,12 +224,13 @@ if __name__ == "__main__":
     bt.setLight_ambient(color=(0.1, 0.1, 0.1, 1))
     bt.shadowThreshold(alphaThreshold=0.05, interpolationMode='CARDINAL')
 
+    pcd_name = PCD_PATH.split("/")[-1].split(".")[0]
     print("Saving scene blend...")
-    save_path = os.path.join(os.getcwd(), "optimized_ellipsoids.blend")
+    save_path = os.path.join(os.getcwd(), f"optimized_ellipsoids_{pcd_name}.blend")
     bpy.ops.wm.save_as_mainfile(filepath=save_path)
 
     print("Starting render...")
-    render_path = os.path.join(os.getcwd(), "render_result.png")
+    render_path = os.path.join(os.getcwd(), f"render_{pcd_name}_optimized_ellipsoids_result.png")
     bt.renderImage(render_path, cam)
 
     print(f"Scene saved to: {save_path}")

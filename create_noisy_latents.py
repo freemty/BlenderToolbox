@@ -5,13 +5,14 @@ import numpy as np
 import bpy # pylint: disable=import-error
 from mathutils import Vector, Quaternion # pylint: disable=E0611
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 import blendertoolbox as bt
 
 # Basic Configuration
-PCD_PATH = "data/volume.ply"     # Point cloud file path
-SAMPLE_RATE = 3                      # Point cloud sampling rate (higher value means fewer ellipsoids)
-VOXEL_SCALE = 0.3                  # Base scaling ratio
+PCD_PATH = "data/kitti360_seq_2013_05_28_drive_0004_sync_scene_11319.ply"     # Point cloud file path
+SAMPLE_RATE = 13                      # Point cloud sampling rate (higher value means fewer ellipsoids)
+VOXEL_SCALE = 0.6                  # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
 
 # Optimization Mode Selection
@@ -169,7 +170,7 @@ def create_merged_voxels(points, colors):
 
         # set color brightness/contrast
         BCNode = tree.nodes.new('ShaderNodeBrightContrast')
-        BCNode.inputs['Bright'].default_value = 0.07
+        BCNode.inputs['Bright'].default_value = 0.0
         BCNode.inputs['Contrast'].default_value = 0.0
         BCNode.location.x -= 400
 
@@ -196,22 +197,44 @@ if __name__ == "__main__":
     points = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
     points[:, 2] += 16
     colors = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T / 255.0
-    colors = np.hstack([colors, np.ones((colors.shape[0], 1))])
+    colors = np.mean(colors, axis=1)
+    cmap = plt.get_cmap('viridis')
+    colors = cmap(colors)
+    colors = colors[:, :4]
+    # colors = np.hstack([colors, np.ones((colors.shape[0], 1))])
 
     # Data sampling
     points = points[::SAMPLE_RATE]
     colors = colors[::SAMPLE_RATE]
 
     # Automatically select optimization mode based on data volume
-    if USE_GEOMETRY_NODES and len(points) > MERGE_THRESHOLD:
-        # Geometry nodes mode (requires Blender 3.0+)
-        raise NotImplementedError("Geometry nodes mode requires manual configuration in Blender interface")
-    else:
-        # Merged mesh mode
-        merged_obj = create_merged_voxels(points, colors)
-        merged_obj.location = (0.7, -0.1, 0.75)
-        merged_obj.rotation_euler = tuple((np.array([78, 182, 268]) * 1.0 / 180.0 * np.pi).tolist())
-        merged_obj.scale = (0.05, 0.05, 0.05)
+    # if USE_GEOMETRY_NODES and len(points) > MERGE_THRESHOLD:
+    #     # Geometry nodes mode (requires Blender 3.0+)
+    #     raise NotImplementedError("Geometry nodes mode requires manual configuration in Blender interface")
+    # else:
+    #     # Merged mesh mode
+    #     merged_obj = create_merged_voxels(points, colors)
+    #     merged_obj.location = (0.7, -0.1, 0.75)
+    #     merged_obj.rotation_euler = tuple((np.array([78, 182, 268]) * 1.0 / 180.0 * np.pi).tolist())
+    #     merged_obj.scale = (0.05, 0.05, 0.05)
+
+    num_points = 60000
+    x_min, x_max = np.min(points[:, 0]), np.max(points[:, 0])
+    y_min, y_max = np.min(points[:, 1]), np.max(points[:, 1])
+    z_min, z_max = np.min(points[:, 2]), np.max(points[:, 2])
+    noise_points = np.random.rand(num_points, 3) # [0, 1]
+    noise_points[:, 0] = noise_points[:, 0] * (x_max - x_min) + x_min
+    noise_points[:, 1] = noise_points[:, 1] * (y_max - y_min) + y_min
+    noise_points[:, 2] = noise_points[:, 2] * (z_max - z_min) + z_min
+    noise_values = np.random.rand(num_points)
+    cmap = plt.get_cmap('viridis')
+    points_color = cmap(noise_values)
+    points_color = points_color[:, :4]
+    pt_color = bt.colorObj([], 0.5, 1.0, 1.0, 0.0, 0.0)
+    noise_mesh = bt.readNumpyPoints(noise_points, (-0.14, 0.92, 0.97), (91.4, -5.2, -1.4), (0.045, 0.045, 0.045))
+    noise_mesh = bt.setPointColors(noise_mesh, points_color)
+    noise_mesh.visible_shadow = False
+    bt.setMat_pointCloudColored(noise_mesh, pt_color, 0.1)
 
     bt.invisibleGround(location=(0,0,0.2),shadowBrightness=0.9)
     # setup scene
@@ -221,11 +244,11 @@ if __name__ == "__main__":
     bt.shadowThreshold(alphaThreshold=0.05, interpolationMode='CARDINAL')
 
     print("Saving scene blend...")
-    save_path = os.path.join(os.getcwd(), "voxels.blend")
+    save_path = os.path.join(os.getcwd(), "noisy_latents.blend")
     bpy.ops.wm.save_as_mainfile(filepath=save_path)
 
     print("Starting render...")
-    render_path = os.path.join(os.getcwd(), "render_voxels_result.png")
+    render_path = os.path.join(os.getcwd(), "render_noisy_latents_result.png")
     bt.renderImage(render_path, cam)
 
     print(f"Scene saved to: {save_path}")

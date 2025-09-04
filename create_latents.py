@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import blendertoolbox as bt
 
 # Basic Configuration
-PCD_PATH = "data/volume.ply"     # Point cloud file path
+# PCD_PATH = "data/volume.ply"     # Point cloud file path
+PCD_PATH = "data/kitti360_seq_2013_05_28_drive_0004_sync_scene_11319.ply"     # Point cloud file path
 SAMPLE_RATE = 13                      # Point cloud sampling rate (higher value means fewer ellipsoids)
 VOXEL_SCALE = 0.6                  # Base scaling ratio
 BASE_SUBDIV = 2                      # Base subdivision level (0-5)
@@ -225,12 +226,13 @@ if __name__ == "__main__":
     bt.setLight_ambient(color=(0.1, 0.1, 0.1, 1))
     bt.shadowThreshold(alphaThreshold=0.05, interpolationMode='CARDINAL')
 
+    pcd_name = PCD_PATH.split("/")[-1].split(".")[0]
     print("Saving scene blend...")
-    save_path = os.path.join(os.getcwd(), "latents.blend")
+    save_path = os.path.join(os.getcwd(), f"latents_{pcd_name}.blend")
     bpy.ops.wm.save_as_mainfile(filepath=save_path)
 
     print("Starting render...")
-    render_path = os.path.join(os.getcwd(), "render_latents_result.png")
+    render_path = os.path.join(os.getcwd(), f"render_{pcd_name}_latents_result.png")
     bt.renderImage(render_path, cam)
 
     print(f"Scene saved to: {save_path}")
