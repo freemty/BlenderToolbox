@@ -16,7 +16,7 @@ import bmesh
 import numpy as np
 from . initColorNode import initColorNode
 
-def drawBoundaryLoop(mesh, r, bdColor, subdivision = 2):
+def drawBoundaryLoop(mesh, r, bdColor):
     nV = len(mesh.data.vertices)
     V = np.zeros((nV, 3), dtype = float)
     for ii in range(nV):
@@ -44,7 +44,7 @@ def drawBoundaryLoop(mesh, r, bdColor, subdivision = 2):
     bm.from_mesh(bdMesh) 
 
     unibE, idx = np.unique(bE,  return_inverse=True)
-    bE_new = np.reshape(idx, (int(len(idx.flatten())/2), 2)) # credit to Sidhanth Holalkere (sholalkere) for pointing out the fix!
+    bE_new = np.reshape(idx, (int(idx.shape[0]/2), 2))
 
     # add vertices
     VList =  []
@@ -73,7 +73,7 @@ def drawBoundaryLoop(mesh, r, bdColor, subdivision = 2):
     bpy.ops.object.shade_smooth()
 
     # # subdivision
-    level = subdivision
+    level = 2
     bpy.context.view_layer.objects.active = bdObj
     bpy.ops.object.modifier_add(type='SUBSURF')
     bdObj.modifiers["Subdivision"].render_levels = level

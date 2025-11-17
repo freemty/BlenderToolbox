@@ -5,8 +5,9 @@ import blendertoolbox as bt
 import bpy
 import os
 import numpy as np
+cwd = os.getcwd()
 
-outputPath = os.path.abspath('./demo_slicePlane.png') 
+outputPath = os.path.join(cwd, './demo_slicePlane.png') 
 
 ## initialize blender
 imgRes_x = 480 

@@ -5,8 +5,9 @@ import blendertoolbox as bt
 import bpy
 import os
 import numpy as np
+cwd = os.getcwd()
 
-outputHeader = os.path.abspath('./demo_circCamera_') # make it abs path for windows
+outputHeader = os.path.join(cwd, './demo_circCamera_') # make it abs path for windows
 
 ## initialize blender
 imgRes_x = 480 
